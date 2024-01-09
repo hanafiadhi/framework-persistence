@@ -7,10 +7,6 @@ import {
 } from 'mongoose';
 import { IUserSchema } from 'src/common/interface/user.interface';
 
-const validateObjectId = {
-  validator: (value: any) => Types.ObjectId.isValid(value),
-};
-
 @Schema({
   collection: 'user',
   strict: 'throw',
@@ -26,33 +22,25 @@ export class User extends Document implements IUserSchema {
   @Prop()
   age: number;
 
-  @Prop({
-    validate: validateObjectId,
-  })
+  @Prop()
   province: schemaObject.Types.ObjectId;
 
   @Prop()
   province_name: string;
 
-  @Prop({
-    validate: validateObjectId,
-  })
+  @Prop()
   city: schemaObject.Types.ObjectId;
 
   @Prop()
   city_name: string;
 
-  @Prop({
-    validate: validateObjectId,
-  })
+  @Prop()
   district: schemaObject.Types.ObjectId;
 
   @Prop()
   district_name: string;
 
-  @Prop({
-    validate: validateObjectId,
-  })
+  @Prop()
   sub_district: schemaObject.Types.ObjectId;
 
   @Prop()
