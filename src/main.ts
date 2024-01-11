@@ -5,11 +5,18 @@ import { RmqService } from './providers/queue/rabbbitmq/rmq.service';
 import { RmqOptions } from '@nestjs/microservices';
 
 import { USER } from './common/constants/service';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   const configService = app.get(ConfigService);
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+        transform:true
+    })
+  );
 
   const env: string = configService.get<string>('app.appEnv');
   const appName: string = configService.get<string>('app.appName');
