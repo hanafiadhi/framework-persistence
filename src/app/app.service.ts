@@ -10,19 +10,7 @@ export class AppService {
     private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async create() {
-    const payload = {
-      name: 'Rifki Ari',
-      age: 21,
-      province: '659bbe91a86d15f1e52d3060',
-      province_name: 'Jawa',
-      city: '659bbe91a86d15f1e52d3062',
-      city_name: 'Bekasi',
-      district: '659bbe91a86d15f1e52d3063',
-      district_name: 'Cibitung',
-      sub_district: '659bbe91a86d15f1e52d3060',
-      sub_district_name: 'Wanasari',
-    };
+  async create(payload:any) {
     return this.userModel.create(payload);
   }
 
@@ -33,5 +21,22 @@ export class AppService {
 
     const res = await this.userModel.findOne(payload);
     return res;
+  }
+
+  async delete(userId: string) {
+    const deleteUser = await this.userModel.findOneAndDelete({
+       _id: userId 
+    });
+
+    return deleteUser;
+  }
+
+  async update(payload:any) {
+     const data = payload.data;
+     const updateUser = await this.userModel.findOneAndUpdate({
+       _id :payload.userId,
+     }, data);
+
+     return updateUser;
   }
 }
