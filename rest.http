@@ -1,0 +1,23 @@
+###
+GET http://localhost:9200/_cat/indices?v
+
+###
+GET http://localhost:9200/users/_search
+
+###
+GET http://localhost:9200/users/_search
+Content-Type: application/json
+
+{
+  "query": {
+    "match": {
+      "name" : "Rifki"
+    }
+  }
+}
+
+###
+DELETE http://localhost:9200/users/_doc/o8VkBo0BJ5qw-a0MkgFF
+
+###
+PUT http://localhost:9200/users

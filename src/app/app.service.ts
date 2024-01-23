@@ -10,33 +10,32 @@ export class AppService {
     private readonly userModel: Model<UserDocument>,
   ) {}
 
-  async create(payload:any) {
+  async create(payload: any) {
     return this.userModel.create(payload);
   }
 
-  async get() {
-    const payload = {
-      province: '659bbe91a86d15f1e52d3060',
-    };
-
-    const res = await this.userModel.findOne(payload);
+  async get(_id: string) {
+    const res = await this.userModel.findOne({ _id });
     return res;
   }
 
   async delete(userId: string) {
     const deleteUser = await this.userModel.findOneAndDelete({
-       _id: userId 
+      _id: userId,
     });
 
     return deleteUser;
   }
 
-  async update(payload:any) {
-     const data = payload.data;
-     const updateUser = await this.userModel.findOneAndUpdate({
-       _id :payload.userId,
-     }, data);
+  async update(payload: any) {
+    const data = payload.data;
+    const updateUser = await this.userModel.findOneAndUpdate(
+      {
+        _id: payload.userId,
+      },
+      data,
+    );
 
-     return updateUser;
+    return updateUser;
   }
 }
