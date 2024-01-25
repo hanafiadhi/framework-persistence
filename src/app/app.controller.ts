@@ -1,33 +1,37 @@
 import { MessagePattern, Payload } from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
-import { USER } from 'src/common/constants/service';
+import { Prisma, User } from '@prisma/client';
+import { UpdateUserDto } from './dto/user-update.dto';
+import { CreateUserDto } from './dto/create-user-dto';
+import { UserId } from './dto/user-id.dto';
 
 @Controller('app')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @MessagePattern('create-user')
-  async create(@Payload() payload:any): Promise<any> {
-    return this.appService.create(payload);
+  async create(@Payload() createUserDto: CreateUserDto): Promise<User> {
+    return this.appService.create(createUserDto);
   }
 
-  @MessagePattern('get-user-list')
-  async getUserList() {}
-
-  @MessagePattern('get-user')
-  async get(): Promise<any> {
-    return this.appService.get();
+  @MessagePattern('find-user')
+  async get(@Payload() id: UserId): Promise<User | null> {
+    return this.appService.get(id);
   }
 
-  @MessagePattern('delete-user')
-  async delete(@Payload() userId: string) {
-    return this.appService.delete(userId);
-    
+  @MessagePattern('list-user')
+  async list(): Promise<User[]> {
+    return this.appService.list();
   }
 
   @MessagePattern('update-user')
-  async update(@Payload() payload:any) {
+  async update(@Payload() payload: UpdateUserDto): Promise<User | null> {
     return this.appService.update(payload);
+  }
+
+  @MessagePattern('remove-user')
+  async remove(@Payload() id: UserId): Promise<User | null> {
+    return this.appService.remove(id);
   }
 }

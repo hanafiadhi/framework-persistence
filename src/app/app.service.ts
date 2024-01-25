@@ -1,42 +1,36 @@
-import { User, UserDocument } from './schema/app.schema';
-import { InjectModel } from '@nestjs/mongoose';
 import { Injectable } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { DatabaseService } from 'src/database/database.service';
+import { User } from '@prisma/client';
+import { UpdateUserDto } from './dto/user-update.dto';
+import { CreateUserDto } from './dto/create-user-dto';
+import { UserId, UserIdDto } from './dto/user-id.dto';
 
 @Injectable()
 export class AppService {
-  constructor(
-    @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
-  ) {}
+  constructor(private readonly databaseService: DatabaseService) {}
 
-  async create(payload:any) {
-    return this.userModel.create(payload);
+  async create(payload: CreateUserDto): Promise<User> {
+    return this.databaseService.user.create({ data: payload });
   }
 
-  async get() {
-    const payload = {
-      province: '659bbe91a86d15f1e52d3060',
-    };
-
-    const res = await this.userModel.findOne(payload);
-    return res;
+  async get(id: UserId): Promise<User | null> {
+    return this.databaseService.user.findUnique({ where: { id } });
   }
 
-  async delete(userId: string) {
-    const deleteUser = await this.userModel.findOneAndDelete({
-       _id: userId 
+  async list(): Promise<User[]> {
+    return this.databaseService.user.findMany();
+  }
+
+  async update(payload: UpdateUserDto): Promise<User> {
+    const { id, ...body } = payload;
+
+    return this.databaseService.user.update({
+      where: { id },
+      data: { ...body },
     });
-
-    return deleteUser;
   }
 
-  async update(payload:any) {
-     const data = payload.data;
-     const updateUser = await this.userModel.findOneAndUpdate({
-       _id :payload.userId,
-     }, data);
-
-     return updateUser;
+  async remove(id: UserId): Promise<User | null> {
+    return this.databaseService.user.delete({ where: { id } });
   }
 }

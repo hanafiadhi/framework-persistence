@@ -1,0 +1,35 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Gender {
+  MALE
+  FEMALE
+}
+
+model User {
+  id           Int           @id @unique @default(autoincrement())
+  name         String
+  email        String        @unique
+  gender       String
+  is_active    Boolean       @default(true)
+  social_media SocialMedia[]
+  created_at   DateTime      @default(now())
+  updated_at   DateTime      @updatedAt
+}
+
+model SocialMedia {
+  id       Int    @id @default(autoincrement())
+  platform String
+  username String
+  user     User   @relation(fields: [user_id], references: [id])
+  user_id  Int
+}
