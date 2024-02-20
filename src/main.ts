@@ -7,6 +7,7 @@ import * as chalk from 'chalk';
 
 import { USER } from './common/constants/service';
 import { ValidationPipe } from '@nestjs/common';
+import { Console } from 'console';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -21,18 +22,49 @@ async function bootstrap() {
   const appName: string = configService.get<string>('app.appName');
   const mongoUri: string = configService.get<string>('database.host');
   const dbName: string = configService.get<string>('database.name');
+  const dbDebug: string = configService.get<string>('database.debug');
   const rmqService = app.get<RmqService>(RmqService);
-  app.connectMicroservice<RmqOptions>(rmqService.getOptions(USER, true));
+  const rabbitMQ = app.connectMicroservice<RmqOptions>(
+    rmqService.getOptions(USER, true),
+  );
+  const rmqMessagePattern = rabbitMQ['server']['messageHandlers'].keys();
 
   await app.startAllMicroservices();
-  const error = chalk.bold.red;
-  const warning = chalk.hex('#FFA500'); // Orange color
+  const error = chalk.bold.yellowBright;
+  const warning = chalk.hex('#789461'); // Orange color
 
-  console.log(error('Error!'));
-  console.log(warning('Warning!'));
+  console.log(
+    warning(`
+    ============================================================================================================
+
+      ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄█   ▄█▄    ▄████████      ████████▄     ▄████████  ▄█    █▄
+  ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███ ▄███▀   ███    ███      ███   ▀███   ███    ███ ███    ███
+     ▀███▀▀██   ███    ███   ███▌ ███   ███   ███▐██▀     ███    █▀       ███    ███   ███    █▀  ███    ███
+      ███   ▀  ▄███▄▄▄▄███▄▄ ███▌ ███   ███  ▄█████▀      ███             ███    ███  ▄███▄▄▄     ███    ███
+      ███     ▀▀███▀▀▀▀███▀  ███▌ ███   ███ ▀▀█████▄    ▀███████████      ███    ███ ▀▀███▀▀▀     ███    ███
+      ███       ███    ███   ███  ███   ███   ███▐██▄            ███      ███    ███   ███    █▄  ███    ███
+      ███       ███    ███   ███  ███   ███   ███ ▀███▄    ▄█    ███      ███   ▄███   ███    ███ ███    ███
+     ▄████▀     ███    █▀    █▀    ▀█   █▀    ███   ▀█▀  ▄████████▀       ████████▀    ██████████  ▀██████▀
+                                        ▀
+    ============================================================================================================
+  `),
+  );
+  console.log(`\n`);
+  console.log('INFORMATION \t: ENV, QUEUE, MESSAGE PATTERN');
+
+  console.log(
+    '----------------------------------------------------------------------------------------------------------------',
+  );
   console.log(`\n`);
   console.log(`APP NAME\t: ${appName}`);
-  console.log(`ENVIRONMENT\t: ${env}`);
-  console.log(`DATABASE\t: ${mongoUri}/${dbName}`);
+  console.log(`APP ENVIRONMENT\t: ${env}`);
+
+  console.log(`DATABASE URL\t: ${mongoUri}`);
+  console.log(`DATABASE NAME\t: ${dbName}`);
+  console.log(`DATABASE DEBUG\t: ${dbDebug}`);
+
+  console.log(`QUEUE\t\t: ${USER}`);
+  console.log(`MESSAGE PATTERN\t: ${Array.from(rmqMessagePattern)}`);
+  console.log(`\n`);
 }
 bootstrap();
