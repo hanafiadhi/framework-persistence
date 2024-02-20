@@ -1,4 +1,9 @@
-import { MessagePattern, Payload } from '@nestjs/microservices';
+import {
+  Ctx,
+  MessagePattern,
+  Payload,
+  RmqContext,
+} from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
 import { USER } from 'src/common/constants/service';
@@ -8,7 +13,7 @@ export class AppController {
   constructor(private readonly appService: AppService) {}
 
   @MessagePattern('create-user')
-  async create(@Payload() payload:any): Promise<any> {
+  async create(@Payload() payload: any): Promise<any> {
     return this.appService.create(payload);
   }
 
@@ -23,11 +28,19 @@ export class AppController {
   @MessagePattern('delete-user')
   async delete(@Payload() userId: string) {
     return this.appService.delete(userId);
-    
   }
 
   @MessagePattern('update-user')
-  async update(@Payload() payload:any) {
+  async update(@Payload() payload: any) {
     return this.appService.update(payload);
+  }
+
+  @MessagePattern('nice')
+  async nice(@Payload() data: any, @Ctx() context: RmqContext) {
+    console.log({
+      payload: data,
+      ctx: context.getMessage(),
+      pattern: context.getPattern(),
+    });
   }
 }

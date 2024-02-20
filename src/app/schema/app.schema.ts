@@ -16,34 +16,64 @@ import { IUserSchema } from 'src/common/interface/user.interface';
   },
 })
 export class User extends Document implements IUserSchema {
-  @Prop()
+  @Prop({
+    required: true,
+    index: { partialFilterExpression: { isDeleted: false }, unique: true },
+  })
   name: string;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   age: number;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   province: schemaObject.Types.ObjectId;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   province_name: string;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   city: schemaObject.Types.ObjectId;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   city_name: string;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   district: schemaObject.Types.ObjectId;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   district_name: string;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   sub_district: schemaObject.Types.ObjectId;
 
-  @Prop()
+  @Prop({
+    required: true, //optional
+    default: 0,
+  })
   sub_district_name: string;
 }
 
