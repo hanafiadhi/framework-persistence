@@ -7,7 +7,6 @@ import * as chalk from 'chalk';
 
 import { USER } from './common/constants/service';
 import { ValidationPipe } from '@nestjs/common';
-import { Console } from 'console';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -27,16 +26,18 @@ async function bootstrap() {
   const rabbitMQ = app.connectMicroservice<RmqOptions>(
     rmqService.getOptions(USER, true),
   );
-  const rmqMessagePattern = rabbitMQ['server']['messageHandlers'].keys();
 
   await app.startAllMicroservices();
-  const error = chalk.bold.yellowBright;
-  const warning = chalk.hex('#789461'); // Orange color
 
+  const warning = chalk.hex('#789461'); // Orange color
+  console.log(`\n`);
+  console.log(
+    warning(
+      `+================================================================================================================+`,
+    ),
+  );
   console.log(
     warning(`
-    ============================================================================================================
-
       ███        ▄█    █▄     ▄█  ███▄▄▄▄      ▄█   ▄█▄    ▄████████      ████████▄     ▄████████  ▄█    █▄
   ▀█████████▄   ███    ███   ███  ███▀▀▀██▄   ███ ▄███▀   ███    ███      ███   ▀███   ███    ███ ███    ███
      ▀███▀▀██   ███    ███   ███▌ ███   ███   ███▐██▀     ███    █▀       ███    ███   ███    █▀  ███    ███
@@ -46,25 +47,44 @@ async function bootstrap() {
       ███       ███    ███   ███  ███   ███   ███ ▀███▄    ▄█    ███      ███   ▄███   ███    ███ ███    ███
      ▄████▀     ███    █▀    █▀    ▀█   █▀    ███   ▀█▀  ▄████████▀       ████████▀    ██████████  ▀██████▀
                                         ▀
-    ============================================================================================================
   `),
   );
-  console.log(`\n`);
-  console.log('INFORMATION \t: ENV, QUEUE, MESSAGE PATTERN');
-
   console.log(
-    '----------------------------------------------------------------------------------------------------------------',
+    warning(
+      `+================================================================================================================+`,
+    ),
   );
   console.log(`\n`);
-  console.log(`APP NAME\t: ${appName}`);
-  console.log(`APP ENVIRONMENT\t: ${env}`);
+  console.log(chalk.blue('APPLICATION'));
+  console.log(
+    '+----------------------------------------------------------------------------------------------------------------+',
+  );
 
-  console.log(`DATABASE URL\t: ${mongoUri}`);
-  console.log(`DATABASE NAME\t: ${dbName}`);
-  console.log(`DATABASE DEBUG\t: ${dbDebug}`);
+  console.log(chalk.blue(` NAME\t\t\t: ${appName}`));
+  console.log(chalk.blue(` ENVIRONMENT\t\t: ${env}`));
 
-  console.log(`QUEUE\t\t: ${USER}`);
-  console.log(`MESSAGE PATTERN\t: ${Array.from(rmqMessagePattern)}`);
   console.log(`\n`);
+  console.log(chalk.green('DATABASE'));
+  console.log(
+    '+----------------------------------------------------------------------------------------------------------------+',
+  );
+  console.log(chalk.green(` URL\t\t\t: ${mongoUri}`));
+  console.log(chalk.green(` NAME\t\t\t: ${dbName}`));
+  console.log(chalk.green(` DEBUG\t\t\t: ${dbDebug}`));
+  console.log(`\n`);
+
+  console.log(chalk.yellow('RABBIT MQ'));
+  console.log(
+    '+----------------------------------------------------------------------------------------------------------------+',
+  );
+  console.log(chalk.yellow(` URL\t\t\t: ${rabbitMQ['server']['urls']}`));
+  console.log(chalk.yellow(` QUEUE\t\t\t: ${USER}`));
+  console.log(
+    chalk.yellow(
+      ` MESSAGE PATTERN\t: ${Array.from(
+        rabbitMQ['server']['messageHandlers'].keys(),
+      )}`,
+    ),
+  );
 }
 bootstrap();

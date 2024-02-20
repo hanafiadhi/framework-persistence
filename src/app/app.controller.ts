@@ -6,7 +6,6 @@ import {
 } from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
-import { USER } from 'src/common/constants/service';
 
 @Controller('app')
 export class AppController {
@@ -35,7 +34,7 @@ export class AppController {
     return this.appService.update(payload);
   }
 
-  @MessagePattern('nice')
+  @MessagePattern('mantab')
   async nice(@Payload() data: any, @Ctx() context: RmqContext) {
     console.log({
       payload: data,
