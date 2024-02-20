@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { ConfigService } from '@nestjs/config';
 import { RmqService } from './providers/queue/rabbbitmq/rmq.service';
 import { RmqOptions } from '@nestjs/microservices';
+import * as chalk from 'chalk';
 
 import { USER } from './common/constants/service';
 import { ValidationPipe } from '@nestjs/common';
@@ -24,6 +25,11 @@ async function bootstrap() {
   app.connectMicroservice<RmqOptions>(rmqService.getOptions(USER, true));
 
   await app.startAllMicroservices();
+  const error = chalk.bold.red;
+  const warning = chalk.hex('#FFA500'); // Orange color
+
+  console.log(error('Error!'));
+  console.log(warning('Warning!'));
   console.log(`\n`);
   console.log(`APP NAME\t: ${appName}`);
   console.log(`ENVIRONMENT\t: ${env}`);
