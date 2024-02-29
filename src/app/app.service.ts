@@ -1,17 +1,27 @@
 import { User, UserDocument } from './schema/app.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { Injectable } from '@nestjs/common';
-import { Model } from 'mongoose';
+import { BadRequestException, Injectable } from '@nestjs/common';
+
+import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class AppService {
   constructor(
     @InjectModel(User.name)
-    private readonly userModel: Model<UserDocument>,
+    private readonly userModel: SoftDeleteModel<UserDocument>,
   ) {}
 
-  async create(payload:any) {
-    return this.userModel.create(payload);
+  async create(payload: any) {
+    try {
+      return await this.userModel.create(payload);
+    } catch (error) {
+      throw new RpcException(
+        new BadRequestException(
+          `${Object.keys(error.keyPattern)} sudah digunakan`,
+        ).getResponse(),
+      );
+    }
   }
 
   async get() {
@@ -25,18 +35,33 @@ export class AppService {
 
   async delete(userId: string) {
     const deleteUser = await this.userModel.findOneAndDelete({
-       _id: userId 
+      _id: userId,
     });
 
     return deleteUser;
   }
 
-  async update(payload:any) {
-     const data = payload.data;
-     const updateUser = await this.userModel.findOneAndUpdate({
-       _id :payload.userId,
-     }, data);
+  async update(payload: any) {
+    const data = payload.data;
+    const updateUser = await this.userModel.findOneAndUpdate(
+      {
+        _id: payload.userId,
+      },
+      data,
+    );
 
-     return updateUser;
+    return updateUser;
+  }
+
+  async findEmail(email: string) {
+    return await this.userModel.findOne({ email });
+  }
+
+  async findById(_id: string) {
+    return await this.userModel.findById(_id);
+  }
+
+  async changePassword(_id: string, password: string) {
+    return await this.userModel.findOneAndUpdate({ _id }, { password });
   }
 }

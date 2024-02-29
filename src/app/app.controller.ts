@@ -3,17 +3,21 @@ import {
   MessagePattern,
   Payload,
   RmqContext,
+  RpcException,
 } from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
 
-@Controller('app')
+@Controller()
 export class AppController {
   constructor(private readonly appService: AppService) {}
-
   @MessagePattern('create-user')
   async create(@Payload() payload: any): Promise<any> {
-    return this.appService.create(payload);
+    try {
+      return await this.appService.create(payload);
+    } catch (error) {
+      throw new RpcException(error);
+    }
   }
 
   @MessagePattern('get-user-list')
@@ -41,5 +45,20 @@ export class AppController {
       ctx: context.getMessage(),
       pattern: context.getPattern(),
     });
+  }
+  @MessagePattern('find-by-email')
+  async email(@Payload() email: any, @Ctx() context: RmqContext) {
+    return await this.appService.findEmail(email);
+  }
+
+  @MessagePattern('find-by-id')
+  async findById(@Payload() _id: string, @Ctx() context: RmqContext) {
+    return await this.appService.findById(_id);
+  }
+  @MessagePattern('change-password')
+  async changePassword(@Payload() data: any, @Ctx() context: RmqContext) {
+    console.log(data);
+
+    return await this.appService.changePassword(data._id, data.password);
   }
 }

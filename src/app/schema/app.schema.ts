@@ -5,6 +5,7 @@ import {
   Types,
   Schema as schemaObject,
 } from 'mongoose';
+import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 import { IUserSchema } from 'src/common/interface/user.interface';
 
 @Schema({
@@ -21,6 +22,18 @@ export class User extends Document implements IUserSchema {
     index: { partialFilterExpression: { isDeleted: false }, unique: true },
   })
   name: string;
+
+  @Prop({
+    required: true,
+    index: { partialFilterExpression: { isDeleted: false }, unique: true },
+  })
+  email: string;
+
+  @Prop({
+    required: true, //optional
+    default: '',
+  })
+  password: string;
 
   @Prop({
     required: true, //optional
@@ -79,4 +92,5 @@ export class User extends Document implements IUserSchema {
 
 export type UserDocument = HydratedDocument<User>;
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export const UserSchema =
+  SchemaFactory.createForClass(User).plugin(softDeletePlugin);
