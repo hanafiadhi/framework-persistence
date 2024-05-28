@@ -1,9 +1,16 @@
 import { User, UserDocument } from './schema/app.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+} from '@nestjs/common';
 
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { HashingService } from '../hashing.service';
+import { MongooseError } from 'mongoose';
+import { RpcException } from '@nestjs/microservices';
 
 @Injectable()
 export class AppService {
@@ -15,7 +22,20 @@ export class AppService {
 
   async create(payload: any) {
     payload.password = await this.hashingService.hash(payload.password);
-    return this.userModel.create(payload);
+    try {
+      const user = await this.userModel.create(payload);
+      return user;
+    } catch (error) {
+      if (error.code === 11000) {
+        const duplicateKey = error.keyValue
+          ? Object.keys(error.keyValue)[0]
+          : '';
+        throw new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: `${duplicateKey} sudadawdawah digunakan`,
+        });
+      }
+    }
   }
 
   async get() {

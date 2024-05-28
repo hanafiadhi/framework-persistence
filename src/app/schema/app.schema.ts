@@ -10,6 +10,7 @@ import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
     createdAt: 'created_at',
     updatedAt: 'updated_at',
   },
+  versionKey: false,
 })
 export class User extends Document implements IUserSchema {
   @Prop({

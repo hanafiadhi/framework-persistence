@@ -7,6 +7,8 @@ import { AppController } from './app/app.controller';
 import { AppService } from './app/app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './app/schema/app.schema';
+import { APP_FILTER } from '@nestjs/core';
+import { ExceptionFilter } from './common/filter/rpc-exeption.filter';
 import { HashingService } from './hashing.service';
 import { BcryptService } from './hashing/bcrypt.service';
 
@@ -32,6 +34,10 @@ import { BcryptService } from './hashing/bcrypt.service';
   controllers: [AppController],
   providers: [
     AppService,
+    {
+      provide: APP_FILTER,
+      useClass: ExceptionFilter,
+    },
     {
       provide: HashingService,
       useClass: BcryptService,
