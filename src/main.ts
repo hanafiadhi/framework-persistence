@@ -21,8 +21,8 @@ async function bootstrap() {
   const mongoUri: string = configService.get<string>('database.host');
   const dbName: string = configService.get<string>('database.name');
   const rmqService = app.get<RmqService>(RmqService);
-  app.connectMicroservice<RmqOptions>(rmqService.getOptions(USER, true));
 
+  app.connectMicroservice<RmqOptions>(rmqService.getOptions(USER, true));
   await app.startAllMicroservices();
   console.log(`\n`);
   console.log(`APP NAME\t: ${appName}`);

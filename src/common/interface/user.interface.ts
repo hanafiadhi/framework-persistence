@@ -1,14 +1,26 @@
+import { Prop } from '@nestjs/mongoose';
 import { Schema } from 'mongoose';
 
 export interface IUserSchema {
-  name: string;
-  age: number;
-  province: Schema.Types.ObjectId;
-  province_name: string;
-  city: Schema.Types.ObjectId;
-  city_name: string;
-  district: Schema.Types.ObjectId;
-  district_name: string;
-  sub_district: Schema.Types.ObjectId;
-  sub_district_name: string;
+  username: string | null;
+  password: string;
+  role: string[];
+  applications: string[];
+  is_logged_in: boolean;
+  last_logged_in: Date;
+  last_logged_out: Date;
+  last_ip_address: string;
+  last_logged_information?: {
+    device_id?: string;
+    device_brand?: string;
+    device_model?: string;
+    device_manufacture?: string;
+    device_os?: string;
+    device_os_version?: string;
+  };
+  confirmToken?: string;
+  verifiedAt?: string;
+  is_active?: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }

@@ -1,11 +1,7 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import {
-  Document,
-  HydratedDocument,
-  Types,
-  Schema as schemaObject,
-} from 'mongoose';
+import { Document, HydratedDocument, SchemaTypes } from 'mongoose';
 import { IUserSchema } from 'src/common/interface/user.interface';
+import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 
 @Schema({
   collection: 'user',
@@ -20,63 +16,53 @@ export class User extends Document implements IUserSchema {
     required: true,
     index: { partialFilterExpression: { isDeleted: false }, unique: true },
   })
-  name: string;
+  username: string;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  age: number;
+  @Prop({ type: String, required: true })
+  password: string;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  province: schemaObject.Types.ObjectId;
+  @Prop({ type: Array, required: true })
+  role: string[];
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  province_name: string;
+  @Prop({ type: Array, required: true })
+  applications: string[];
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  city: schemaObject.Types.ObjectId;
+  @Prop({ type: Boolean, default: false })
+  is_logged_in: boolean;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  city_name: string;
+  @Prop({ type: Date, default: null })
+  last_logged_in: Date;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  district: schemaObject.Types.ObjectId;
+  @Prop({ type: Date, default: null })
+  last_logged_out: Date;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  district_name: string;
+  @Prop({ type: String, default: null })
+  last_ip_address: string;
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  sub_district: schemaObject.Types.ObjectId;
+  @Prop({ type: SchemaTypes.Mixed })
+  last_logged_information?: {
+    device_id?: string;
+    device_brand?: string;
+    device_model?: string;
+    device_manufacture?: string;
+    device_os?: string;
+    device_os_version?: string;
+  };
 
-  @Prop({
-    required: true, //optional
-    default: 0,
-  })
-  sub_district_name: string;
+  @Prop({ default: null })
+  confirmToken: string;
+
+  @Prop({ default: null })
+  verifiedAt: string;
+
+  @Prop({ type: Boolean, default: false })
+  is_active: boolean;
+
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export type UserDocument = HydratedDocument<User>;
 
-export const UserSchema = SchemaFactory.createForClass(User);
+export const UserSchema =
+  SchemaFactory.createForClass(User).plugin(softDeletePlugin);

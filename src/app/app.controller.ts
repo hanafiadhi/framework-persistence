@@ -35,6 +35,11 @@ export class AppController {
     return this.appService.update(payload);
   }
 
+  @MessagePattern('find-by-username')
+  async findByEmail(@Payload() payload: any) {
+    return this.appService.findByUsername(payload);
+  }
+
   @MessagePattern('nice')
   async nice(@Payload() data: any, @Ctx() context: RmqContext) {
     console.log({

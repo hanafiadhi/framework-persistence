@@ -1,1 +1,1 @@
-export const USER = 'FRAMEWORK';
+export const USER = 'USER';

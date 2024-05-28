@@ -7,6 +7,8 @@ import { AppController } from './app/app.controller';
 import { AppService } from './app/app.service';
 import { MongooseModule } from '@nestjs/mongoose';
 import { User, UserSchema } from './app/schema/app.schema';
+import { HashingService } from './hashing.service';
+import { BcryptService } from './hashing/bcrypt.service';
 
 @Module({
   imports: [
@@ -28,6 +30,12 @@ import { User, UserSchema } from './app/schema/app.schema';
     AppModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: HashingService,
+      useClass: BcryptService,
+    },
+  ],
 })
 export class AppModule {}
