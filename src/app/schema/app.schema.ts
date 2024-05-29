@@ -22,6 +22,9 @@ export class User extends Document implements IUserSchema {
   @Prop({ type: String, required: true })
   password: string;
 
+  @Prop({ required: true, type: String })
+  tenant_id: string;
+
   @Prop({ type: Array, required: true })
   role: string[];
 

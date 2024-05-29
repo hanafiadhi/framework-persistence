@@ -1,6 +1,5 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import Configs from 'src/common/configs';
 import { RmqModule } from './providers/queue/rabbbitmq/rmq.module';
 import { MongoDbModule } from './providers/database/mongodb/mongo.module';
 import { AppController } from './app/app.controller';
@@ -11,11 +10,13 @@ import { APP_FILTER } from '@nestjs/core';
 import { ExceptionFilter } from './common/filter/rpc-exeption.filter';
 import { HashingService } from './hashing.service';
 import { BcryptService } from './hashing/bcrypt.service';
+import { SeedService } from './seeds/seed.seevice';
+import configs from './common/configs';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load: Configs,
+      load: configs,
       ignoreEnvFile: false,
       isGlobal: true,
       cache: true,
@@ -42,6 +43,7 @@ import { BcryptService } from './hashing/bcrypt.service';
       provide: HashingService,
       useClass: BcryptService,
     },
+    SeedService,
   ],
 })
 export class AppModule {}

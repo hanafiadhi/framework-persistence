@@ -36,8 +36,6 @@ export class DatabaseOptionsService implements MongooseOptionsFactory {
       uri = `${uri}/${this.database}${this.options}`;
     }
 
-    // console.log(uri);
-
     /* istanbul ignore next */
     if (this.env !== 'prod') {
       mongoose.set('debug', this.debug);
@@ -58,7 +56,6 @@ export class DatabaseOptionsService implements MongooseOptionsFactory {
         password: this.password,
       };
     }
-
     return mongooseOptions;
   }
 }
