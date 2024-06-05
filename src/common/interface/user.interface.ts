@@ -1,6 +1,3 @@
-import { Prop } from '@nestjs/mongoose';
-import { Schema } from 'mongoose';
-
 export interface IUserSchema {
   username: string | null;
   password: string;

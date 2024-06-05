@@ -1,4 +1,3 @@
-import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { User, UserDocument } from '../app/schema/app.schema';
 import { InjectModel } from '@nestjs/mongoose';
 import { HashingService } from '../hashing.service';
@@ -15,7 +14,7 @@ export class SeedService {
 
   async seed() {
     try {
-      let user: Partial<User> = {
+      const user: Partial<User> = {
         username: 'root',
         password: 'root',
         role: ['root', 'admin'],
@@ -23,7 +22,8 @@ export class SeedService {
         tenant_id: 'PDP0001',
       };
       user.password = await this.hashingService.hash(user.password);
-      let findUser = await this.userModel.find({ username: 'root' });
+      const findUser = await this.userModel.findOne({ username: 'root' });
+
       if (findUser) {
         throw new Error('User sudah dibuat');
       }

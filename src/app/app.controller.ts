@@ -6,9 +6,8 @@ import {
 } from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
-import { USER } from 'src/common/constants/service';
 
-@Controller('app')
+@Controller('user-per')
 export class AppController {
   constructor(private readonly appService: AppService) {}
 
@@ -18,11 +17,13 @@ export class AppController {
   }
 
   @MessagePattern('get-user-list')
-  async getUserList() {}
+  async getUserList(@Payload() payload: any) {
+    return this.appService.findAll(payload);
+  }
 
   @MessagePattern('get-user')
-  async get(): Promise<any> {
-    return this.appService.get();
+  async getOne(@Payload() payload: string): Promise<any> {
+    return this.appService.get(payload);
   }
 
   @MessagePattern('delete-user')

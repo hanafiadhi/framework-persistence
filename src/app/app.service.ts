@@ -1,16 +1,12 @@
 import { User, UserDocument } from './schema/app.schema';
 import { InjectModel } from '@nestjs/mongoose';
-import {
-  BadRequestException,
-  HttpException,
-  HttpStatus,
-  Injectable,
-} from '@nestjs/common';
+import { HttpStatus, Injectable } from '@nestjs/common';
 
 import { SoftDeleteModel } from 'soft-delete-plugin-mongoose';
 import { HashingService } from '../hashing.service';
-import { MongooseError } from 'mongoose';
 import { RpcException } from '@nestjs/microservices';
+import { APIFeatures } from '../common/utils/apiFeatures';
+import mongoose from 'mongoose';
 
 @Injectable()
 export class AppService {
@@ -23,8 +19,9 @@ export class AppService {
   async create(payload: any) {
     payload.password = await this.hashingService.hash(payload.password);
     try {
-      const user = await this.userModel.create(payload);
-      return user;
+      const { username, tenant_id, role, applications } =
+        await this.userModel.create(payload);
+      return { username, tenant_id, role, applications };
     } catch (error) {
       if (error.code === 11000) {
         const duplicateKey = error.keyValue
@@ -32,39 +29,104 @@ export class AppService {
           : '';
         throw new RpcException({
           statusCode: HttpStatus.BAD_REQUEST,
-          message: `${duplicateKey} sudadawdawah digunakan`,
+          message: `${duplicateKey} sudah digunakan`,
         });
       }
     }
   }
+  async findAll(queryString: any): Promise<any> {
+    try {
+      const features = new APIFeatures(this.userModel.find(), queryString)
+        .filter()
+        .sorting()
+        .limitFields();
 
-  async get() {
-    const payload = {
-      province: '659bbe91a86d15f1e52d3060',
-    };
+      const totalItems = await this.userModel.countDocuments(
+        features.filterData,
+      );
+      const result = await features.pagination();
+      const reportData = {
+        paging: {
+          page: features.page,
+          size: features.limit,
+          totalItems: totalItems,
+          totalPages: Math.ceil(totalItems / features.limit),
+        },
+        data: result,
+      };
 
-    const res = await this.userModel.findOne(payload);
-    return res;
+      return reportData;
+    } catch (error) {
+      console.error(error);
+      if (error instanceof mongoose.Error) {
+        console.error('Mongoose Error:', error.message, error.name);
+        throw new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: `Silahkan cek query anda`,
+        });
+      }
+      console.error('Non-Mongoose Error:', error.message);
+      throw new RpcException({
+        statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
+        message: `Silahkan cek query anda`,
+      }); // Re-throw the error for proper handling
+    }
+  }
+
+  async get(payload: string) {
+    return await this.userModel.findOne(
+      { _id: payload },
+      {
+        username: 1,
+        tenant_id: 1,
+        role: 1,
+        applications: 1,
+      },
+    );
   }
 
   async delete(userId: string) {
     const deleteUser = await this.userModel.softDelete({
       _id: userId,
     });
-
     return deleteUser;
   }
 
   async update(payload: any) {
     const data = payload.data;
-    const updateUser = await this.userModel.findOneAndUpdate(
-      {
-        _id: payload.userId,
-      },
-      data,
-    );
 
-    return updateUser;
+    if (Object.keys(data).includes('password')) {
+      data.password = await this.hashingService.hash(data.password);
+    }
+    try {
+      const updateUser = await this.userModel.findOneAndUpdate(
+        {
+          _id: payload.userId,
+        },
+        data,
+        {
+          new: true,
+        },
+      );
+      if (!updateUser) {
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `user dengan ID ${payload.userId} tidak di temukan`,
+        });
+      }
+      return updateUser;
+    } catch (error) {
+      // mongoose.Error
+      if (error.code === 11000) {
+        const duplicateKey = error.keyValue
+          ? Object.keys(error.keyValue)[0]
+          : '';
+        throw new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: `${duplicateKey} sudah digunakan`,
+        });
+      }
+    }
   }
 
   async findByUsername(username: string) {

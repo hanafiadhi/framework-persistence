@@ -46,7 +46,6 @@ export class DatabaseOptionsService implements MongooseOptionsFactory {
       useNewUrlParser: true,
       useUnifiedTopology: true,
       serverSelectionTimeoutMS: 5000,
-      // useMongoClient: true
     };
 
     /* istanbul ignore next */

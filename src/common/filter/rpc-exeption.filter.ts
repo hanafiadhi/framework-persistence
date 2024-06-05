@@ -13,7 +13,6 @@ export class ExceptionFilter implements RpcExceptionFilter<RpcException> {
     const status =
       exception.getError()['statusCode'] || HttpStatus.INTERNAL_SERVER_ERROR;
     const message = exception.getError()['message'] || 'Internal server error';
-    const errorDetail = exception.getError()['errors'] || 'Detailing Error';
 
     return throwError(
       () =>
