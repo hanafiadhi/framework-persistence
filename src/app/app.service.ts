@@ -42,7 +42,7 @@ export class AppService {
         .limitFields();
 
       const totalItems = await this.userModel.countDocuments(
-        features.filterData,
+        JSON.parse(features.filterData),
       );
       const result = await features.pagination();
       const reportData = {
