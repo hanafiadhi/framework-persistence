@@ -22,7 +22,10 @@ export class SeedService {
         tenant_id: 'PDP0001',
       };
       user.password = await this.hashingService.hash(user.password);
-      const findUser = await this.userModel.findOne({ username: 'root' });
+      const findUser = await this.userModel.findOne({
+        username: 'root',
+        isDeleted: false,
+      });
 
       if (findUser) {
         throw new Error('User sudah dibuat');

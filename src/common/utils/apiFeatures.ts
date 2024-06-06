@@ -22,8 +22,6 @@ export class APIFeatures {
       $or: [],
     };
     for (const key in queryObj) {
-      console.log(key);
-
       if (queryObj[key] && queryObj[key]['regex']) {
         // { username: { regex: 'H', '$options': 'i' } }
         queryObj[key] = {
@@ -33,14 +31,15 @@ export class APIFeatures {
       }
 
       if (Object.keys(queryObj[key])[0] == 'in') {
+        const splitevalue: string = String(Object.values(queryObj[key])[0]);
         queryObj[key] = {
-          $in: [Object.values(queryObj[key])[0]],
+          $in: splitevalue.split(','),
         };
       }
 
       if (Object.keys(queryObj[key])[0] == 'eq') {
         queryObj[key] = {
-          $in: Object.values(queryObj[key])[0],
+          $eq: Object.values(queryObj[key])[0],
         };
       }
 
