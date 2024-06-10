@@ -126,6 +126,7 @@ export class AppService {
           message: `${duplicateKey} sudah digunakan`,
         });
       }
+      throw error;
     }
   }
 
