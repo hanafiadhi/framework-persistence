@@ -16,26 +16,23 @@ export class DatabaseOptionsService implements MongooseOptionsFactory {
   private readonly env: string;
 
   constructor(private readonly configService: ConfigService) {
-    this.env = this.configService.get<string>('APP_ENV');
-    this.host = this.configService.get<string>('DATABASE_HOST');
-    this.database = this.configService.get<string>('DATABASE_NAME');
-    this.user = this.configService.get<string>('DATABASE_USER');
-    this.password = this.configService.get<string>('DATABASE_PASSWORD');
-    this.debug = this.configService.get<boolean>('DATABASE_DEBUG');
-    this.options = this.configService.get<string>('DATABASE_OPTIONS');
+    this.env = this.configService.get<string>('app.env');
+    this.host = this.configService.get<string>('database.host');
+    this.database = this.configService.get<string>('database.name');
+    this.user = this.configService.get<string>('database.user');
+    this.password = this.configService.get<string>('database.password');
+    this.debug = this.configService.get<boolean>('database.debug');
+
+    this.options = this.configService.get<string>('database.options')
+      ? `?${this.configService.get<string>('database.options')}`
+      : '';
   }
 
   createMongooseOptions(): MongooseModuleOptions {
-    let uri = `mongodb://${this.host}`;
+    let uri = `${this.host}`;
 
-    if (this.user && this.password) {
-      uri = `mongodb://${this.user}:${this.password}@${this.host}/${this.database}`;
-    } else {
-      uri = `mongodb://${this.host}/${this.database}`;
-    }
-
-    if (this.options) {
-      uri += `?${this.options}`;
+    if (this.database) {
+      uri = `${uri}/${this.database}${this.options}`;
     }
 
     if (this.env !== 'prod') {
@@ -46,6 +43,13 @@ export class DatabaseOptionsService implements MongooseOptionsFactory {
       uri,
       serverSelectionTimeoutMS: 5000,
     };
+
+    if (this.user && this.password) {
+      mongooseOptions.auth = {
+        username: this.user,
+        password: this.password,
+      };
+    }
 
     return mongooseOptions;
   }
