@@ -40,13 +40,4 @@ export class AppController {
   async findByEmail(@Payload() payload: any) {
     return this.appService.findByUsername(payload);
   }
-
-  @MessagePattern('nice')
-  async nice(@Payload() data: any, @Ctx() context: RmqContext) {
-    console.log({
-      payload: data,
-      ctx: context.getMessage(),
-      pattern: context.getPattern(),
-    });
-  }
 }

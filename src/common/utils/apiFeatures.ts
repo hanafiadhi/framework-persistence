@@ -12,12 +12,12 @@ export class APIFeatures {
   filter() {
     // 1) Filtering
     const queryObj = { ...this.queryString };
-    // console.log(1, queryObj);
+
     const excludedFields = ['page', 'sort', 'limit', 'fields'];
     excludedFields.forEach((fields) => {
       delete queryObj[fields];
     });
-    // console.log(2, queryObj);
+
     const or = {
       $or: [],
     };

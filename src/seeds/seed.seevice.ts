@@ -30,7 +30,7 @@ export class SeedService {
       if (findUser) {
         throw new Error('User sudah dibuat');
       }
-      await this.userModel.create(user).catch((err) => console.log(err));
+      await this.userModel.create(user).catch((err) => this.logger.error(err));
     } catch (error) {
       this.logger.error(error);
     }

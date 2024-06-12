@@ -57,15 +57,13 @@ export class AppService {
 
       return reportData;
     } catch (error) {
-      console.error(error);
       if (error instanceof mongoose.Error) {
-        console.error('Mongoose Error:', error.message, error.name);
         throw new RpcException({
           statusCode: HttpStatus.BAD_REQUEST,
           message: `Silahkan cek query anda`,
         });
       }
-      console.error('Non-Mongoose Error:', error.message);
+
       throw new RpcException({
         statusCode: HttpStatus.INTERNAL_SERVER_ERROR,
         message: `Silahkan cek query anda`,
