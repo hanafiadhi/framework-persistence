@@ -31,6 +31,11 @@ export class AppController {
     return this.appService.delete(userId);
   }
 
+  @MessagePattern('delete-user-many')
+  async deleteMany(@Payload() payload: object) {
+    return this.appService.removeMany(payload);
+  }
+
   @MessagePattern('update-user')
   async update(@Payload() payload: any) {
     return this.appService.update(payload);
@@ -39,5 +44,10 @@ export class AppController {
   @MessagePattern('find-by-username')
   async findByEmail(@Payload() payload: any) {
     return this.appService.findByUsername(payload);
+  }
+
+  @MessagePattern('health-check')
+  async nice(@Payload() data: any) {
+    return data;
   }
 }

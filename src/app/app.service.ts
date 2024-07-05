@@ -19,9 +19,9 @@ export class AppService {
   async create(payload: any) {
     payload.password = await this.hashingService.hash(payload.password);
     try {
-      const { username, tenant_id, role, applications } =
+      const { _id, username, tenant_id, role, applications } =
         await this.userModel.create(payload);
-      return { username, tenant_id, role, applications };
+      return { _id, username, tenant_id, role, applications };
     } catch (error) {
       if (error.code === 11000) {
         const duplicateKey = error.keyValue
@@ -134,5 +134,9 @@ export class AppService {
       isDeleted: false,
       applications: { $exists: true, $ne: null },
     });
+  }
+
+  async removeMany(payload: any) {
+    return await this.userModel.deleteMany(payload);
   }
 }
