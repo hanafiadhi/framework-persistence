@@ -41,6 +41,11 @@ export class AppController {
     return this.appService.update(payload);
   }
 
+  @MessagePattern('update-status-user')
+  async updateStatus(@Payload() payload: any) {
+    return this.appService.updateStatusMany(payload);
+  }
+
   @MessagePattern('find-by-username')
   async findByEmail(@Payload() payload: any) {
     return this.appService.findByUsername(payload);

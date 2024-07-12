@@ -20,7 +20,7 @@ import configs from './common/configs';
       ignoreEnvFile: false,
       isGlobal: true,
       cache: true,
-      envFilePath: ['env/.env'],
+      envFilePath: ['.env'],
     }),
     MongooseModule.forFeature([
       {

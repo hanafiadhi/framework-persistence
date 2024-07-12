@@ -139,4 +139,14 @@ export class AppService {
   async removeMany(payload: any) {
     return await this.userModel.deleteMany(payload);
   }
+
+  async updateStatusMany(payload: any) {
+    return await this.userModel.updateMany(
+      {
+        _id: { $in: payload.volunteer },
+        isDeleted: false,
+      },
+      { $set: { is_active: payload.is_active } },
+    );
+  }
 }

@@ -59,7 +59,7 @@ export class User extends Document implements IUserSchema {
   @Prop({ default: null })
   verifiedAt: string;
 
-  @Prop({ type: Boolean, default: false })
+  @Prop({ type: Boolean, default: true })
   is_active: boolean;
 
   createdAt: Date;
