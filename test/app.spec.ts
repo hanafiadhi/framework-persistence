@@ -1,60 +1,219 @@
 import { Test, TestingModule } from '@nestjs/testing';
-import { INestApplication } from '@nestjs/common';
-import { AppModule } from '../src/app.module';
+
+import { RpcException } from '@nestjs/microservices';
+import { HttpStatus } from '@nestjs/common';
+import { getModelToken } from '@nestjs/mongoose';
 import { AppController } from '../src/app/app.controller';
 import { AppService } from '../src/app/app.service';
+import { User } from '../src/app/schema/app.schema';
+import { HashingService } from '../src/hashing.service';
 import mongoose from 'mongoose';
 
-describe('UserController', () => {
-  let app: INestApplication;
-  let userController: AppController;
+describe('AppController', () => {
+  let appController: AppController;
+  let appService: AppService;
+
+  const mockUserModel = {
+    create: jest.fn(),
+    findOne: jest.fn(),
+    findOneAndUpdate: jest.fn(),
+    deleteMany: jest.fn(),
+    updateMany: jest.fn(),
+    softDelete: jest.fn(),
+    countDocuments: jest.fn(),
+    find: jest.fn(() => ({
+      filter: jest.fn().mockReturnThis(),
+      sorting: jest.fn().mockReturnThis(),
+      limitFields: jest.fn().mockReturnThis(),
+      pagination: jest.fn(),
+    })),
+  };
+
+  const mockHashingService = {
+    hash: jest.fn((data: string) => Promise.resolve('hashed_' + data)),
+  };
 
   beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AppController],
+      providers: [
+        AppService,
+        { provide: getModelToken(User.name), useValue: mockUserModel },
+        { provide: HashingService, useValue: mockHashingService },
+      ],
     }).compile();
 
-    app = moduleFixture.createNestApplication();
-    userController = moduleFixture.get<AppController>(AppController);
-    await app.init();
+    appController = module.get<AppController>(AppController);
+    appService = module.get<AppService>(AppService);
   });
 
-  it('should be defined userController', () => {
-    expect(userController).toBeDefined();
+  it('should be defined', () => {
+    expect(appController).toBeDefined();
   });
 
-  afterAll(async () => {
-    await app.close();
+  describe('create', () => {
+    it('should create a user', async () => {
+      const payload = { username: 'test', password: 'testpassword' };
+      const hashedPassword = 'hashedPassword';
+      mockHashingService.hash.mockImplementation((data: string) =>
+        Promise.resolve('hashed_' + data),
+      );
+
+      mockUserModel.create.mockResolvedValue({
+        _id: 'someId',
+        username: 'test',
+        tenant_id: 'someTenantId',
+        role: 'user',
+        applications: [],
+      });
+
+      const result = await appController.create(payload);
+
+      expect(mockHashingService.hash).toHaveBeenCalledWith('testpassword');
+      expect(mockUserModel.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          password: 'hashed_testpassword',
+        }),
+      );
+
+      expect(result).toEqual({
+        _id: 'someId',
+        username: 'test',
+        tenant_id: 'someTenantId',
+        role: 'user',
+        applications: [],
+      });
+    });
+
+    it('should throw an RpcException if username already exists', async () => {
+      const payload = { username: 'test', password: 'test123' };
+      mockHashingService.hash.mockResolvedValue('hashedPassword');
+      mockUserModel.create.mockRejectedValue({
+        code: 11000,
+        keyValue: { username: 'test' },
+      });
+
+      await expect(appController.create(payload)).rejects.toThrow(
+        new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'username sudah digunakan',
+        }),
+      );
+    });
   });
 
-  afterEach(async () => {
-    await mongoose.connection.close();
+  describe('getUserList', () => {
+    it('should find all community with pagination', async () => {
+      // Mocking the APIFeatures class
+      const mockFeatures = {
+        filter: jest.fn().mockReturnThis(),
+        sorting: jest.fn().mockReturnThis(),
+        limitFields: jest.fn().mockReturnThis(),
+        pagination: jest.fn().mockReturnThis(),
+        filterData: '{}', // Example filterData, adjust as per your needs
+        page: 1,
+        limit: 10,
+      };
+
+      jest
+        .spyOn(appService, 'findAll')
+        .mockImplementation(async (queryString) => {
+          const totalItems = 20;
+          const result = await mockFeatures.pagination();
+          const totalPages = Math.ceil(totalItems / mockFeatures.limit);
+          return {
+            paging: {
+              page: mockFeatures.page,
+              size: mockFeatures.limit,
+              totalItems: totalItems,
+              totalPages: totalPages !== Infinity ? totalPages : 0,
+            },
+            data: result,
+          };
+        });
+
+      const queryString = {};
+      const result = await appService.findAll(queryString);
+
+      expect(result.paging.totalItems).toBe(20);
+      expect(mockFeatures.pagination).toBeDefined();
+    });
+
+    it('should throw an RpcException if mongoose error occurs', async () => {
+      const queryString = { page: 1, limit: 10 };
+
+      mockUserModel.find.mockImplementation(() => {
+        throw new mongoose.Error('Some mongoose error');
+      });
+
+      await expect(appService.findAll(queryString)).rejects.toThrow(
+        RpcException,
+      );
+      await expect(appService.findAll(queryString)).rejects.toEqual(
+        new RpcException({
+          statusCode: HttpStatus.BAD_REQUEST,
+          message: 'Silahkan cek query anda',
+        }),
+      );
+    });
   });
-});
 
-describe('UserService', () => {
-  let app: INestApplication;
-  let userService: AppService;
+  describe('getOne', () => {
+    it('should return a user', async () => {
+      const payload = 'someId';
+      const mockResult = {
+        username: 'test',
+        tenant_id: 'someTenantId',
+        role: 'user',
+        applications: [],
+      };
+      mockUserModel.findOne.mockResolvedValue(mockResult);
 
-  beforeEach(async () => {
-    const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [AppModule],
-    }).compile();
+      const result = await appController.getOne(payload);
 
-    app = moduleFixture.createNestApplication();
-    userService = moduleFixture.get<AppService>(AppService);
-    await app.init();
+      expect(result).toEqual(mockResult);
+    });
   });
 
-  it('should be defined userService', () => {
-    expect(userService).toBeDefined();
+  describe('delete', () => {
+    it('should delete a user', async () => {
+      const userId = 'someId';
+      const mockResult = { deleted: true };
+      mockUserModel.softDelete.mockResolvedValue(mockResult);
+
+      const result = await appController.delete(userId);
+
+      expect(result).toEqual(mockResult);
+    });
   });
 
-  afterAll(async () => {
-    await app.close();
-  });
+  describe('update', () => {
+    it('should update a user', async () => {
+      const payload = { userId: 'someId', data: { username: 'updated' } };
+      const mockResult = {
+        _id: 'someId',
+        username: 'updated',
+        tenant_id: 'someTenantId',
+        role: 'user',
+        applications: [],
+      };
+      mockUserModel.findOneAndUpdate.mockResolvedValue(mockResult);
 
-  afterEach(async () => {
-    await mongoose.connection.close();
+      const result = await appController.update(payload);
+
+      expect(result).toEqual(mockResult);
+    });
+
+    it('should throw an RpcException if user not found', async () => {
+      const payload = { userId: 'someId', data: { username: 'updated' } };
+      mockUserModel.findOneAndUpdate.mockResolvedValue(null);
+
+      await expect(appController.update(payload)).rejects.toThrow(
+        new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `user dengan ID ${payload.userId} tidak di temukan`,
+        }),
+      );
+    });
   });
 });

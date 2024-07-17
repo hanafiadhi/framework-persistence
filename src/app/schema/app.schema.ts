@@ -68,5 +68,19 @@ export class User extends Document implements IUserSchema {
 
 export type UserDocument = HydratedDocument<User>;
 
-export const UserSchema =
-  SchemaFactory.createForClass(User).plugin(softDeletePlugin);
+export const UserSchema = SchemaFactory.createForClass(User)
+  .plugin(softDeletePlugin)
+  .post('find', function (docs) {
+    docs.forEach((doc) => {
+      if (!doc.last_logged_information) {
+        doc.last_logged_information = {
+          device_id: null,
+          device_brand: null,
+          device_model: null,
+          device_manufacture: null,
+          device_os: null,
+          device_os_version: null,
+        };
+      }
+    });
+  });

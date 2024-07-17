@@ -1,9 +1,23 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="jest tests" tests="2" failures="0" errors="0" time="3.959">
-  <testsuite name="UserController" errors="0" failures="0" skipped="0" timestamp="2024-07-12T09:54:10" time="3.872" tests="2">
-    <testcase classname="UserController should be defined userController" name="UserController should be defined userController" time="0.259">
+<testsuites name="jest tests" tests="9" failures="0" errors="0" time="10.308">
+  <testsuite name="AppController" errors="0" failures="0" skipped="0" timestamp="2024-07-17T03:52:02" time="10.148" tests="9">
+    <testcase classname="AppController should be defined" name="AppController should be defined" time="0.031">
     </testcase>
-    <testcase classname="UserService should be defined userService" name="UserService should be defined userService" time="0.037">
+    <testcase classname="AppController create should create a user" name="AppController create should create a user" time="0.011">
+    </testcase>
+    <testcase classname="AppController create should throw an RpcException if username already exists" name="AppController create should throw an RpcException if username already exists" time="0.06">
+    </testcase>
+    <testcase classname="AppController getUserList should find all community with pagination" name="AppController getUserList should find all community with pagination" time="0.005">
+    </testcase>
+    <testcase classname="AppController getUserList should throw an RpcException if mongoose error occurs" name="AppController getUserList should throw an RpcException if mongoose error occurs" time="0.008">
+    </testcase>
+    <testcase classname="AppController getOne should return a user" name="AppController getOne should return a user" time="0.005">
+    </testcase>
+    <testcase classname="AppController delete should delete a user" name="AppController delete should delete a user" time="0.017">
+    </testcase>
+    <testcase classname="AppController update should update a user" name="AppController update should update a user" time="0.002">
+    </testcase>
+    <testcase classname="AppController update should throw an RpcException if user not found" name="AppController update should throw an RpcException if user not found" time="0.015">
     </testcase>
   </testsuite>
 </testsuites>
