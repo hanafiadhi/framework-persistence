@@ -14,6 +14,42 @@ import { softDeletePlugin } from 'soft-delete-plugin-mongoose';
 })
 export class User extends Document implements IUserSchema {
   @Prop({
+    required: false,
+    type: {
+      verified_token: { type: String, default: null },
+      verified_at: { type: String, default: null },
+      verified_qty: { type: Number, default: 3 },
+      verified_expired: { type: Number, default: null },
+      verified_banned: { type: Number, default: null },
+    },
+    _id: false,
+  })
+  verified: {
+    verified_token: string;
+    verified_at: string;
+    verified_qty: number;
+    verified_expired: number;
+    verified_banned: number;
+  };
+
+  @Prop({
+    required: false,
+    type: {
+      otp_token: { type: String, default: null },
+      otp_qty: { type: Number, default: 3 },
+      otp_expired: { type: Number, default: null },
+      otp_banned: { type: Number, default: null },
+    },
+    _id: false,
+  })
+  otp: {
+    otp_token: string;
+    otp_expired: number;
+    otp_banned: number;
+    otp_qty: number;
+  };
+
+  @Prop({
     required: true,
     index: { partialFilterExpression: { isDeleted: false }, unique: true },
   })
@@ -53,12 +89,6 @@ export class User extends Document implements IUserSchema {
     device_os_version?: string;
   };
 
-  @Prop({ default: null })
-  confirmToken: string;
-
-  @Prop({ default: null })
-  verifiedAt: string;
-
   @Prop({ type: Boolean, default: true })
   is_active: boolean;
 
@@ -70,6 +100,25 @@ export type UserDocument = HydratedDocument<User>;
 
 export const UserSchema = SchemaFactory.createForClass(User)
   .plugin(softDeletePlugin)
+  .pre('save', function (next) {
+    if (!this.verified && !this.otp) {
+      this['verified'] = {
+        verified_token: null,
+        verified_at: null,
+        verified_qty: 3,
+        verified_expired: null,
+        verified_banned: null,
+      };
+      this.otp = {
+        otp_token: null,
+        otp_expired: null,
+        otp_banned: null,
+        otp_qty: 3,
+      };
+    }
+
+    next();
+  })
   .post('find', function (docs) {
     docs.forEach((doc) => {
       if (!doc.last_logged_information) {

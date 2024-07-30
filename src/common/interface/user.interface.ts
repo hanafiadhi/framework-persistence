@@ -15,8 +15,20 @@ export interface IUserSchema {
     device_os?: string;
     device_os_version?: string;
   };
-  confirmToken?: string;
-  verifiedAt?: string;
+  verified: {
+    verified_token: string;
+    verified_at: string;
+    verified_expired: number;
+    verified_banned: number;
+    verified_qty: number;
+  };
+  otp: {
+    otp_token: string;
+    otp_qty: number;
+    otp_expired: number;
+    otp_banned: number;
+  };
+
   is_active?: boolean;
   createdAt: Date;
   updatedAt: Date;

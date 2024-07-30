@@ -1,6 +1,6 @@
 {
   "name": "user-persistence",
-  "version": "0.0.11",
+  "version": "0.0.12",
   "description": "",
   "author": "We us",
   "private": true,
@@ -67,7 +67,7 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": "test",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"

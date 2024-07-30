@@ -51,6 +51,16 @@ export class AppController {
     return this.appService.findByUsername(payload);
   }
 
+  @MessagePattern('forget-password')
+  async forgetPassword(@Payload() payload: any) {
+    return await this.appService.generateTokenOTP(payload);
+  }
+
+  @MessagePattern('register-mobile')
+  async registerMobile(@Payload() payload: any) {
+    return await this.appService.generateTokenVefification(payload);
+  }
+
   @MessagePattern('health-check')
   async nice(@Payload() data: any) {
     return data;

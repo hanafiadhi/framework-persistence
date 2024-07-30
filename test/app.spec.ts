@@ -8,6 +8,7 @@ import { AppService } from '../src/app/app.service';
 import { User } from '../src/app/schema/app.schema';
 import { HashingService } from '../src/hashing.service';
 import mongoose from 'mongoose';
+import { IUserSchema } from '../src/common/interface/user.interface';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -214,6 +215,144 @@ describe('AppController', () => {
           message: `user dengan ID ${payload.userId} tidak di temukan`,
         }),
       );
+    });
+  });
+
+  describe('forgot-password', () => {
+    beforeEach(() => {
+      jest.clearAllMocks();
+    });
+    it('should throw an error because user not found', async () => {
+      mockUserModel.findOne.mockRejectedValue(
+        new RpcException({
+          statusCode: HttpStatus.NOT_FOUND,
+          message: `user dengan username root tidak di temukan`,
+        }),
+      );
+      await expect(
+        appService.generateTokenOTP({ whatsapp: 'root' }),
+      ).rejects.toThrow(RpcException);
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
+    });
+
+    it('should success generate token otp', async () => {
+      const mockResult: Partial<IUserSchema> = {
+        username: 'root',
+        otp: {
+          otp_banned: null,
+          otp_expired: null,
+          otp_qty: 3,
+          otp_token: null,
+        },
+      };
+
+      const mockUpdateResult: Partial<IUserSchema> = {
+        username: 'root',
+        otp: {
+          otp_banned: null,
+          otp_expired: new Date(new Date().getTime() + 1 * 60 * 1000).getTime(),
+          otp_qty: 2,
+          otp_token: '1231',
+        },
+      };
+
+      mockUserModel.findOne.mockReturnValue(mockResult);
+      mockUserModel.findOneAndUpdate.mockReturnValue(mockUpdateResult);
+
+      await expect(
+        appService.generateTokenOTP({ whatsapp: 'root' }),
+      ).resolves.toEqual({
+        statusCode: HttpStatus.OK,
+        message: 'berhasil generate code otp',
+      });
+
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
+
+      expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { username: 'root' },
+        {
+          $inc: { 'otp.otp_qty': -1 },
+          $set: {
+            'otp.otp_token': expect.any(String),
+            'otp.otp_expired': expect.any(Number),
+          },
+        },
+      );
+    });
+
+    it('should failed generate token otp because otp_qty is zero and must be banned', async () => {
+      const mockResult: Partial<IUserSchema> = {
+        username: 'root',
+        otp: {
+          otp_banned: null,
+          otp_expired: null,
+          otp_qty: 0,
+          otp_token: null,
+        },
+      };
+      const mockUpdateResult: Partial<IUserSchema> = {
+        username: 'root',
+        otp: {
+          otp_banned: new Date(new Date().getTime() + 10 * 60 * 1000).getTime(),
+          otp_expired: null,
+          otp_qty: 3,
+          otp_token: null,
+        },
+      };
+      mockUserModel.findOne.mockReturnValue(mockResult);
+      mockUserModel.findOneAndUpdate.mockReturnValue(mockUpdateResult);
+
+      await expect(
+        appService.generateTokenOTP({ whatsapp: 'root' }),
+      ).rejects.toThrow(
+        new RpcException({
+          statusCode: HttpStatus.NOT_ACCEPTABLE,
+          message: {
+            date_banned: mockUpdateResult.otp.otp_banned,
+            banned: 'Silahkan coba lagi setelah 10 menit',
+          },
+        }),
+      );
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
+
+      expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
+        { username: 'root' },
+        {
+          $set: {
+            'otp.otp_qty': expect.any(Number),
+            'otp.otp_expired': null,
+            'otp.otp_token': null,
+            'otp.otp_banned': expect.any(Number),
+          },
+        },
+      );
+    });
+
+    it('should failed to generate token because still in banned time', async () => {
+      const mockResult: Partial<IUserSchema> = {
+        username: 'root',
+        otp: {
+          otp_banned: new Date(new Date().getTime() + 10 * 60 * 1000).getTime(),
+          otp_expired: null,
+          otp_qty: 3,
+          otp_token: null,
+        },
+      };
+
+      mockUserModel.findOne.mockReturnValue(mockResult);
+
+      await expect(
+        appService.generateTokenOTP({ whatsapp: 'root' }),
+      ).rejects.toThrow(
+        new RpcException({
+          statusCode: HttpStatus.NOT_ACCEPTABLE,
+          message: 'Silahkan coba lagi setelah 10 menit',
+        }),
+      );
+
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        username: 'root',
+      });
     });
   });
 });
