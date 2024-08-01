@@ -208,7 +208,7 @@ export class AppService {
           statusCode: HttpStatus.NOT_ACCEPTABLE,
           message: {
             date_banned: tenMinute,
-            banned: 'Silahkan coba lagi setelah 10 menit',
+            banned: 'Silahkan coba lagi',
           },
         });
       }
@@ -242,7 +242,6 @@ export class AppService {
 
   async generateTokenVefification(payload) {
     const user = await this.userModel.findOne({ username: payload.whatsapp });
-
     if (!user) {
       throw new RpcException({
         statusCode: HttpStatus.NOT_FOUND,
@@ -279,10 +278,6 @@ export class AppService {
             },
           },
         );
-        return {
-          statusCode: HttpStatus.OK,
-          message: 'berhasil generate code verifikasi',
-        };
       } else {
         const now = new Date();
         let nextDay = new Date(now);
@@ -308,35 +303,39 @@ export class AppService {
           },
         });
       }
-    }
-
-    if (user?.verified?.verified_expired <= new Date().getTime()) {
-      throw new RpcException({
-        statusCode: HttpStatus.NOT_ACCEPTABLE,
-        message: 'kode verifikasi sudah expired',
-      });
-    }
-    if (user?.verified?.verified_token != payload.token) {
-      throw new RpcException({
-        statusCode: HttpStatus.NOT_ACCEPTABLE,
-        message: 'kode verifikasi salah',
-      });
-    }
-    await this.userModel.findOneAndUpdate(
-      { username: payload.whatsapp },
-      {
-        $set: {
-          'verified.verified_qty': 0,
-          'verified.verified_at': new Date().getTime(),
-          'verified.verified_token': null,
-          'verified.verified_expired': null,
-          'verified.verified_banned': null,
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'berhasil generate code verifikasi',
+      };
+    } else {
+      if (user?.verified?.verified_expired <= new Date().getTime()) {
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_ACCEPTABLE,
+          message: 'kode verifikasi sudah expired',
+        });
+      }
+      if (user?.verified?.verified_token != payload.token) {
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_ACCEPTABLE,
+          message: 'kode verifikasi salah',
+        });
+      }
+      await this.userModel.findOneAndUpdate(
+        { username: payload.whatsapp },
+        {
+          $set: {
+            'verified.verified_qty': 0,
+            'verified.verified_at': new Date().getTime(),
+            'verified.verified_token': null,
+            'verified.verified_expired': null,
+            'verified.verified_banned': null,
+          },
         },
-      },
-    );
-    return {
-      statusCode: HttpStatus.OK,
-      message: 'berhasil generate code verifikasi',
-    };
+      );
+      return {
+        statusCode: HttpStatus.OK,
+        message: 'verifikasi berhasil',
+      };
+    }
   }
 }
