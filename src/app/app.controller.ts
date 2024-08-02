@@ -3,6 +3,7 @@ import {
   MessagePattern,
   Payload,
   RmqContext,
+  RpcException,
 } from '@nestjs/microservices';
 import { Controller } from '@nestjs/common';
 import { AppService } from './app.service';
@@ -33,6 +34,9 @@ export class AppController {
 
   @MessagePattern('delete-user-many')
   async deleteMany(@Payload() payload: object) {
+    if (Object.keys(payload).length === 0) {
+      throw new Error('payload kosong');
+    }
     return this.appService.removeMany(payload);
   }
 
