@@ -355,4 +355,89 @@ export class AppService {
       };
     }
   }
+
+  async generateOtpChangeWhatsapp(payload) {
+    const user = await this.userModel.findOne({ username: payload.whatsapp });
+
+    if (!user) {
+      throw new RpcException({
+        statusCode: HttpStatus.NOT_FOUND,
+        message: `User dengan username ${payload.whatsapp} tidak di temukan`,
+      });
+    }
+    if (user?.otp?.otp_banned >= new Date().getTime()) {
+      throw new RpcException({
+        date_banned: user?.otp?.otp_banned,
+        banned: 'Silahkan coba lagi',
+      });
+    }
+    if (!payload.otp) {
+      const otpQty = user?.otp?.otp_qty;
+      if (otpQty > 0) {
+        await this.userModel.findOneAndUpdate(
+          { username: payload.whatsapp },
+          {
+            $inc: { 'otp.otp_qty': -1 },
+            $set: {
+              'otp.otp_token': this.generateVerificationCode(),
+              'otp.otp_expired': new Date(
+                new Date().getTime() + 1 * 60 * 1000,
+              ).getTime(),
+            },
+          },
+        );
+        return {
+          statusCode: HttpStatus.OK,
+          message: 'berhasil generate code otp',
+        };
+      } else {
+        const tenMinute = new Date(
+          new Date().getTime() + 10 * 60 * 1000,
+        ).getTime();
+        await this.userModel.findOneAndUpdate(
+          { username: payload.whatsapp },
+          {
+            $set: {
+              'otp.otp_qty': 3,
+              'otp.otp_expired': null,
+              'otp.otp_token': null,
+              'otp.otp_banned': tenMinute,
+            },
+          },
+        );
+        throw new RpcException({
+          statusCode: HttpStatus.NOT_ACCEPTABLE,
+          message: {
+            date_banned: tenMinute,
+            banned: 'Silahkan coba lagi',
+          },
+        });
+      }
+    }
+
+    if (user?.otp?.otp_expired <= new Date().getTime()) {
+      throw new RpcException({
+        statusCode: HttpStatus.NOT_ACCEPTABLE,
+        message: 'kode otp sudah expired',
+      });
+    }
+    if (user?.otp?.otp_token != payload.otp) {
+      throw new RpcException({
+        statusCode: HttpStatus.NOT_ACCEPTABLE,
+        message: 'kode otp salah',
+      });
+    }
+    return await this.userModel.findOneAndUpdate(
+      { _id: payload._id },
+      {
+        username: payload.whatsapp,
+        $set: {
+          'otp.otp_qty': 3,
+          'otp.otp_expired': null,
+          'otp.otp_token': null,
+          'otp.otp_banned': null,
+        },
+      },
+    );
+  }
 }

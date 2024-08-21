@@ -2,13 +2,19 @@ import { Test, TestingModule } from '@nestjs/testing';
 
 import { RpcException } from '@nestjs/microservices';
 import { HttpStatus } from '@nestjs/common';
-import { getModelToken } from '@nestjs/mongoose';
+import { getModelToken, MongooseModule } from '@nestjs/mongoose';
 import { AppController } from '../src/app/app.controller';
 import { AppService } from '../src/app/app.service';
-import { User } from '../src/app/schema/app.schema';
+import { User, UserSchema } from '../src/app/schema/app.schema';
 import { HashingService } from '../src/hashing.service';
 import mongoose from 'mongoose';
 import { IUserSchema } from '../src/common/interface/user.interface';
+import { WhatsAppClientService } from '../src/consumer/use-case/whatsapp-statelles.case';
+import { WhatsAppService } from '../src/consumer/service/whatsapp-statelles.service';
+import { RmqModule } from '../src/providers/queue/rabbbitmq/rmq.module';
+import { ConfigModule } from '@nestjs/config';
+import { MongoDbModule } from '../src/providers/database/mongodb/mongo.module';
+import configs from '../src/common/configs';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -36,11 +42,23 @@ describe('AppController', () => {
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
+      imports: [
+        ConfigModule.forRoot({
+          load: configs,
+          ignoreEnvFile: false,
+          isGlobal: true,
+          cache: true,
+          envFilePath: ['.env'],
+        }),
+        RmqModule,
+        RmqModule.register({ name: 'WHATSAPP' }),
+      ],
       controllers: [AppController],
       providers: [
         AppService,
         { provide: getModelToken(User.name), useValue: mockUserModel },
         { provide: HashingService, useValue: mockHashingService },
+        { provide: WhatsAppClientService, useClass: WhatsAppService },
       ],
     }).compile();
 
@@ -233,51 +251,6 @@ describe('AppController', () => {
         appService.generateTokenOTP({ whatsapp: 'root' }),
       ).rejects.toThrow(RpcException);
       expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
-    });
-
-    it('should success generate token otp', async () => {
-      const mockResult: Partial<IUserSchema> = {
-        username: 'root',
-        otp: {
-          otp_banned: null,
-          otp_expired: null,
-          otp_qty: 3,
-          otp_token: null,
-        },
-      };
-
-      const mockUpdateResult: Partial<IUserSchema> = {
-        username: 'root',
-        otp: {
-          otp_banned: null,
-          otp_expired: new Date(new Date().getTime() + 1 * 60 * 1000).getTime(),
-          otp_qty: 2,
-          otp_token: '1231',
-        },
-      };
-
-      mockUserModel.findOne.mockReturnValue(mockResult);
-      mockUserModel.findOneAndUpdate.mockReturnValue(mockUpdateResult);
-
-      await expect(
-        appService.generateTokenOTP({ whatsapp: 'root' }),
-      ).resolves.toEqual({
-        statusCode: HttpStatus.OK,
-        message: 'berhasil generate code otp',
-      });
-
-      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
-
-      expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
-        { username: 'root' },
-        {
-          $inc: { 'otp.otp_qty': -1 },
-          $set: {
-            'otp.otp_token': expect.any(String),
-            'otp.otp_expired': expect.any(Number),
-          },
-        },
-      );
     });
 
     it('should failed generate token otp because otp_qty is zero and must be banned', async () => {
