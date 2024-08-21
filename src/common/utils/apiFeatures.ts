@@ -91,9 +91,9 @@ export class APIFeatures {
     return this;
   }
   async pagination() {
-    this.page = this.queryString.page * 1 || 1;
+    this.page = this.queryString.page * 1 || 0;
 
-    this.limit = this.queryString.limit * 1 || 100;
+    this.limit = this.queryString.limit * 1 || 0;
 
     const skip = (this.page - 1) * this.limit;
 

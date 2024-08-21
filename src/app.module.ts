@@ -12,6 +12,8 @@ import { HashingService } from './hashing.service';
 import { BcryptService } from './hashing/bcrypt.service';
 import { SeedService } from './seeds/seed.seevice';
 import configs from './common/configs';
+import { WhatsAppClientService } from './consumer/use-case/whatsapp-statelles.case';
+import { WhatsAppService } from './consumer/service/whatsapp-statelles.service';
 
 @Module({
   imports: [
@@ -31,6 +33,7 @@ import configs from './common/configs';
     RmqModule,
     MongoDbModule,
     AppModule,
+    RmqModule.register({ name: 'WHATSAPP' }),
   ],
   controllers: [AppController],
   providers: [
@@ -43,6 +46,7 @@ import configs from './common/configs';
       provide: HashingService,
       useClass: BcryptService,
     },
+    { provide: WhatsAppClientService, useClass: WhatsAppService },
     SeedService,
   ],
 })

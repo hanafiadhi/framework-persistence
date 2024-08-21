@@ -8,6 +8,7 @@ import { RpcException } from '@nestjs/microservices';
 import { APIFeatures } from '../common/utils/apiFeatures';
 import mongoose from 'mongoose';
 import * as crypto from 'crypto';
+import { WhatsAppClientService } from '../consumer/use-case/whatsapp-statelles.case';
 
 @Injectable()
 export class AppService {
@@ -15,7 +16,15 @@ export class AppService {
     @InjectModel(User.name)
     private readonly userModel: SoftDeleteModel<UserDocument>,
     private readonly hashingService: HashingService,
+    private readonly whatappStatellesService: WhatsAppClientService,
   ) {}
+
+  async sendOTPStatelles(payload: any) {
+    if (payload['phone'].startsWith('0')) {
+      payload['phone'] = '62' + payload['phone'].slice(1);
+    }
+    await this.whatappStatellesService.sendOTP(payload);
+  }
 
   async create(payload: any) {
     payload.password = await this.hashingService.hash(payload.password);
@@ -46,12 +55,13 @@ export class AppService {
         JSON.parse(features.filterData),
       );
       const result = await features.pagination();
+      const totalPages = Math.ceil(totalItems / features.limit);
       const reportData = {
         paging: {
           page: features.page,
           size: features.limit,
           totalItems: totalItems,
-          totalPages: Math.ceil(totalItems / features.limit),
+          totalPages: totalPages !== Infinity ? totalPages : 0,
         },
         data: result,
       };
@@ -151,7 +161,7 @@ export class AppService {
     );
   }
 
-  generateVerificationCode(length = 4) {
+  async generateVerificationCode(length = 4) {
     return crypto.randomBytes(length).toString('hex').slice(0, length);
   }
 
@@ -265,13 +275,14 @@ export class AppService {
     }
     if (!payload.token) {
       const verifiedQty = user?.verified?.verified_qty;
+      let generateCode: string = await this.generateVerificationCode();
       if (verifiedQty > 0) {
         await this.userModel.findOneAndUpdate(
           { username: payload.whatsapp },
           {
             $inc: { 'verified.verified_qty': -1 },
             $set: {
-              'verified.verified_token': this.generateVerificationCode(),
+              'verified.verified_token': generateCode,
               'verified.verified_expired': new Date(
                 new Date().getTime() + 1 * 60 * 1000,
               ).getTime(),
@@ -303,6 +314,12 @@ export class AppService {
           },
         });
       }
+
+      await this.sendOTPStatelles({
+        phone: payload.whatsapp,
+        message: generateCode,
+      });
+
       return {
         statusCode: HttpStatus.OK,
         message: 'berhasil generate code verifikasi',
