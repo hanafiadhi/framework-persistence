@@ -60,6 +60,11 @@ export class AppController {
     return await this.appService.generateTokenOTP(payload);
   }
 
+  @MessagePattern('change-whatsapp-user')
+  async resendChangePassword(@Payload() payload: any) {
+    return await this.appService.generateOtpChangeWhatsapp(payload);
+  }
+
   @MessagePattern('register-mobile')
   async registerMobile(@Payload() payload: any) {
     return await this.appService.generateTokenVefification(payload);

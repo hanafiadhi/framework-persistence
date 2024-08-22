@@ -9,6 +9,8 @@ import { APIFeatures } from '../common/utils/apiFeatures';
 import mongoose from 'mongoose';
 import * as crypto from 'crypto';
 import { WhatsAppClientService } from '../consumer/use-case/whatsapp-statelles.case';
+import { VolunteerClientService } from '../consumer/use-case/volunteer.use-case';
+import { RedisClientService } from '../consumer/use-case/redis.use-cae';
 
 @Injectable()
 export class AppService {
@@ -17,6 +19,8 @@ export class AppService {
     private readonly userModel: SoftDeleteModel<UserDocument>,
     private readonly hashingService: HashingService,
     private readonly whatappStatellesService: WhatsAppClientService,
+    private readonly volunteerService: VolunteerClientService,
+    private readonly redisJWTService: RedisClientService,
   ) {}
 
   async sendOTPStatelles(payload: any) {
@@ -166,7 +170,10 @@ export class AppService {
   }
 
   async generateTokenOTP(payload) {
-    const user = await this.userModel.findOne({ username: payload.whatsapp });
+    const user = await this.userModel.findOne({
+      username: payload.whatsapp,
+      isDeleted: false,
+    });
 
     if (!user) {
       throw new RpcException({
@@ -184,7 +191,7 @@ export class AppService {
       const otpQty = user?.otp?.otp_qty;
       if (otpQty > 0) {
         await this.userModel.findOneAndUpdate(
-          { username: payload.whatsapp },
+          { username: payload.whatsapp, isDeleted: false },
           {
             $inc: { 'otp.otp_qty': -1 },
             $set: {
@@ -204,7 +211,7 @@ export class AppService {
           new Date().getTime() + 10 * 60 * 1000,
         ).getTime();
         await this.userModel.findOneAndUpdate(
-          { username: payload.whatsapp },
+          { username: payload.whatsapp, isDeleted: false },
           {
             $set: {
               'otp.otp_qty': 3,
@@ -237,7 +244,7 @@ export class AppService {
       });
     }
     return await this.userModel.findOneAndUpdate(
-      { username: payload.whatsapp },
+      { username: payload.whatsapp, isDeleted: false },
       {
         password: await this.hashingService.hash(payload.password),
         $set: {
@@ -357,12 +364,37 @@ export class AppService {
   }
 
   async generateOtpChangeWhatsapp(payload) {
-    const user = await this.userModel.findOne({ username: payload.whatsapp });
+    /**
+     * mencari user yang mempunyai sama dengan _id
+     * dan
+     * cek apakah usernamenya itu berbeda dari data awal
+     *
+     * kalau sama retunya null
+     */
+    const user = await this.userModel.findOne({
+      _id: payload._id,
+      username: { $ne: payload.whatsapp },
+    });
 
     if (!user) {
       throw new RpcException({
-        statusCode: HttpStatus.NOT_FOUND,
-        message: `User dengan username ${payload.whatsapp} tidak di temukan`,
+        statusCode: HttpStatus.BAD_REQUEST,
+        message: `nomor whatsapp masih sama`,
+      });
+    }
+    /**
+     *kemudian, cek apakah nomor whatsapp sudah di pakai oleh user lain
+     */
+
+    const isWhatsAppUsed = await this.userModel.exists({
+      username: payload.whatsapp, // Cek apakah nomor sudah ada di user lain
+      _id: { $ne: payload._id }, // Pastikan bukan user yang sama
+    });
+
+    if (isWhatsAppUsed) {
+      throw new RpcException({
+        statusCode: HttpStatus.OK,
+        message: `jika whatsapp aktif, Silahkan cek Pesan`,
       });
     }
     if (user?.otp?.otp_banned >= new Date().getTime()) {
@@ -374,26 +406,32 @@ export class AppService {
     if (!payload.otp) {
       const otpQty = user?.otp?.otp_qty;
       if (otpQty > 0) {
+        let generateCode: string = await this.generateVerificationCode();
         await this.userModel.findOneAndUpdate(
-          { username: payload.whatsapp },
+          { _id: payload._id },
           {
             $inc: { 'otp.otp_qty': -1 },
             $set: {
-              'otp.otp_token': this.generateVerificationCode(),
+              'otp.otp_token': generateCode,
               'otp.otp_expired': new Date(
                 new Date().getTime() + 1 * 60 * 1000,
               ).getTime(),
             },
           },
         );
+        await this.sendOTPStatelles({
+          phone: payload.whatsapp,
+          message: generateCode,
+        });
         return {
           statusCode: HttpStatus.OK,
           message: 'berhasil generate code otp',
         };
       } else {
-        const tenMinute = new Date(
-          new Date().getTime() + 10 * 60 * 1000,
-        ).getTime();
+        const now = new Date();
+        let nextDay = new Date(now);
+        nextDay.setDate(now.getDate() + 1);
+        nextDay.setHours(0, 0, 0, 0);
         await this.userModel.findOneAndUpdate(
           { username: payload.whatsapp },
           {
@@ -401,14 +439,14 @@ export class AppService {
               'otp.otp_qty': 3,
               'otp.otp_expired': null,
               'otp.otp_token': null,
-              'otp.otp_banned': tenMinute,
+              'otp.otp_banned': nextDay.getTime(),
             },
           },
         );
         throw new RpcException({
           statusCode: HttpStatus.NOT_ACCEPTABLE,
           message: {
-            date_banned: tenMinute,
+            date_banned: nextDay.getTime(),
             banned: 'Silahkan coba lagi',
           },
         });
@@ -427,7 +465,7 @@ export class AppService {
         message: 'kode otp salah',
       });
     }
-    return await this.userModel.findOneAndUpdate(
+    await this.userModel.findOneAndUpdate(
       { _id: payload._id },
       {
         username: payload.whatsapp,
@@ -439,5 +477,17 @@ export class AppService {
         },
       },
     );
+
+    await this.volunteerService.updateFlexsible({
+      filter: { user_id: payload._id },
+      data: { whatsapp: payload.whatsapp },
+    });
+
+    await this.redisJWTService.deleteCache({ key: payload._id });
+
+    return {
+      statusCode: HttpStatus.OK,
+      message: 'Silahkan login dengan nomor whatsapp terbaru',
+    };
   }
 }

@@ -14,6 +14,10 @@ import { SeedService } from './seeds/seed.seevice';
 import configs from './common/configs';
 import { WhatsAppClientService } from './consumer/use-case/whatsapp-statelles.case';
 import { WhatsAppService } from './consumer/service/whatsapp-statelles.service';
+import { VolunteerClientService } from './consumer/use-case/volunteer.use-case';
+import { VolunterConsumer } from './consumer/service/volunteer.service';
+import { RedisClientService } from './consumer/use-case/redis.use-cae';
+import { RedisService } from './consumer/service/redis.service';
 
 @Module({
   imports: [
@@ -34,6 +38,8 @@ import { WhatsAppService } from './consumer/service/whatsapp-statelles.service';
     MongoDbModule,
     AppModule,
     RmqModule.register({ name: 'WHATSAPP' }),
+    RmqModule.register({ name: 'VOLUNTEER' }),
+    RmqModule.register({ name: 'REDIS' }),
   ],
   controllers: [AppController],
   providers: [
@@ -47,6 +53,8 @@ import { WhatsAppService } from './consumer/service/whatsapp-statelles.service';
       useClass: BcryptService,
     },
     { provide: WhatsAppClientService, useClass: WhatsAppService },
+    { provide: VolunteerClientService, useClass: VolunterConsumer },
+    { provide: RedisClientService, useClass: RedisService },
     SeedService,
   ],
 })

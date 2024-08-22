@@ -15,6 +15,10 @@ import { RmqModule } from '../src/providers/queue/rabbbitmq/rmq.module';
 import { ConfigModule } from '@nestjs/config';
 import { MongoDbModule } from '../src/providers/database/mongodb/mongo.module';
 import configs from '../src/common/configs';
+import { RedisClientService } from '../src/consumer/use-case/redis.use-cae';
+import { VolunterConsumer } from '../src/consumer/service/volunteer.service';
+import { RedisService } from '../src/consumer/service/redis.service';
+import { VolunteerClientService } from '../src/consumer/use-case/volunteer.use-case';
 
 describe('AppController', () => {
   let appController: AppController;
@@ -52,6 +56,8 @@ describe('AppController', () => {
         }),
         RmqModule,
         RmqModule.register({ name: 'WHATSAPP' }),
+        RmqModule.register({ name: 'VOLUNTEER' }),
+        RmqModule.register({ name: 'REDIS' }),
       ],
       controllers: [AppController],
       providers: [
@@ -59,6 +65,8 @@ describe('AppController', () => {
         { provide: getModelToken(User.name), useValue: mockUserModel },
         { provide: HashingService, useValue: mockHashingService },
         { provide: WhatsAppClientService, useClass: WhatsAppService },
+        { provide: VolunteerClientService, useClass: VolunterConsumer },
+        { provide: RedisClientService, useClass: RedisService },
       ],
     }).compile();
 
@@ -250,7 +258,10 @@ describe('AppController', () => {
       await expect(
         appService.generateTokenOTP({ whatsapp: 'root' }),
       ).rejects.toThrow(RpcException);
-      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        username: 'root',
+        isDeleted: false,
+      });
     });
 
     it('should failed generate token otp because otp_qty is zero and must be banned', async () => {
@@ -286,10 +297,13 @@ describe('AppController', () => {
           },
         }),
       );
-      expect(mockUserModel.findOne).toHaveBeenCalledWith({ username: 'root' });
+      expect(mockUserModel.findOne).toHaveBeenCalledWith({
+        username: 'root',
+        isDeleted: false,
+      });
 
       expect(mockUserModel.findOneAndUpdate).toHaveBeenCalledWith(
-        { username: 'root' },
+        { username: 'root', isDeleted: false },
         {
           $set: {
             'otp.otp_qty': expect.any(Number),
@@ -325,6 +339,7 @@ describe('AppController', () => {
 
       expect(mockUserModel.findOne).toHaveBeenCalledWith({
         username: 'root',
+        isDeleted: false,
       });
     });
   });
