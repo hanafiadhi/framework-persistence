@@ -189,19 +189,24 @@ export class AppService {
     }
     if (!payload.otp) {
       const otpQty = user?.otp?.otp_qty;
+      const generateCode = await this.generateVerificationCode();
       if (otpQty > 0) {
         await this.userModel.findOneAndUpdate(
           { username: payload.whatsapp, isDeleted: false },
           {
             $inc: { 'otp.otp_qty': -1 },
             $set: {
-              'otp.otp_token': this.generateVerificationCode(),
+              'otp.otp_token': generateCode,
               'otp.otp_expired': new Date(
                 new Date().getTime() + 1 * 60 * 1000,
               ).getTime(),
             },
           },
         );
+        await this.sendOTPStatelles({
+          phone: payload.whatsapp,
+          message: generateCode,
+        });
         return {
           statusCode: HttpStatus.OK,
           message: 'berhasil generate code otp',

@@ -20,6 +20,7 @@ export class SeedService {
         role: ['root', 'admin'],
         applications: ['webiste', 'dashboard', 'mobile'],
         tenant_id: 'pdp00001',
+        is_active: true,
       };
       user.password = await this.hashingService.hash(user.password);
       const findUser = await this.userModel.findOne({
